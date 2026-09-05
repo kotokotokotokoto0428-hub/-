@@ -75,7 +75,7 @@ button.option:hover{border-color:var(--blue);background:#f8fbff;transform:transl
     <div id="questionArea"></div>
     <div class="actions">
       <button class="btn secondary" id="backBtn" onclick="goBack()">← 前の質問</button>
-      <button class="btn secondary" onclick="resetApp()">最初からやり直す</button>
+      <button type="button" class="btn secondary" id="resetBtn">最初からやり直す</button>
     </div>
   </section>
 
@@ -96,127 +96,287 @@ const state = {
 };
 
 const steps = {
-  q1:{num:1,title:"利用団体の「区分・格（主体）」を選択してください",help:"まず、利用主体の法人格・事業形態を確認します。",options:[
-    {id:"A",title:"A. 営利企業",desc:"株式会社、合同会社、有限会社等",next:"profit",reason:"営利企業が利用主体であるため"},
-    {id:"B",title:"B. 個人事業主・士業事務所",desc:"確定申告を行う個人事業、教室・塾・施術・コンサル・美容・サロン等、弁護士・税理士・司法書士等",next:"profit",reason:"個人事業・士業等の事業活動が利用主体であるため"},
-    {id:"C",title:"C. 一般社団法人・一般財団法人",desc:"一般社団法人または一般財団法人",next:"q2"},
-    {id:"D",title:"D. その他の非営利法人・公的機関",desc:"NPO、社会福祉法人、学校法人、宗教法人、認可地縁団体、商工会議所、農協、労働組合、国・地方自治体等",next:"q3"},
-    {id:"E",title:"E. 任意団体・市民サークル・一般個人",desc:"確定申告を要しない市民・ボランティア活動等",next:"q4_1"}
-  ]},
-  q2:{num:2,title:"税法上の「非営利型」に該当しますか？",help:"一般社団・一般財団法人のみ。定款等で確認できる場合に「はい」を選択します。",options:[
-    {id:"yes",title:"はい",desc:"非営利型法人の要件を満たしている（定款の写し等の確認が必要）",next:"q3"},
-    {id:"no",title:"いいえ／分からない",desc:"非営利型でない、または確認できない",next:"profit",reason:"非営利型であることを確認できない一般社団・一般財団法人であるため"}
-  ]},
-  q3:{num:3,title:"今回の具体的な利用目的に、営業・ビジネス行為が含まれますか？",help:"1つでも該当すれば「はい」。",options:[
-    {id:"yes",title:"はい",desc:"商品の販売・受注／有料展示・商談／企業・サービスのPR・広告・デモ／顧客獲得目的の有料セミナー・相談会／求人・採用・会社説明会等",next:"profit",reason:"今回の利用に営業・ビジネス行為が含まれるため"},
-    {id:"no",title:"いいえ",desc:"上記のいずれにも該当しない、純粋な公益活動・地域活動等",next:"nonprofit",reason:"非営利法人・公的機関による利用で、営業・ビジネス行為がないため"}
-  ]},
-  q4_1:{num:4,title:"予約・申請の主体は、講師・指導者本人または講師が運営するスクール関係者ですか？",help:"講師自身が予約して集客・レッスンを行う場合は「はい」。",options:[
-    {id:"yes",title:"はい",desc:"講師・指導者が主催する教室、スクール、レッスン等",next:"profit",reason:"講師・指導者が主催する有料教室・スクールとみなされるため"},
-    {id:"no",title:"いいえ",desc:"受講者・市民等が主体となってサークル活動のために予約",next:"q4_2"}
-  ]},
-  q4_2:{num:4,title:"参加者から参加費・受講料・月謝・会費・入場料等を徴収しますか？",help:"名称にかかわらず、参加者から徴収する金銭を確認します。",options:[
-    {id:"no",title:"いいえ（完全無料）",desc:"参加者から金銭を徴収しない",next:"q4_4"},
-    {id:"yes",title:"はい",desc:"何らかの参加費・受講料・会費等を徴収する",next:"q4_3"}
-  ]},
-  q4_3:{num:4,title:"1人1回あたりの徴収額は「500円以下」かつ「実費のみ」ですか？",help:"500円以下でも、講師謝礼・運営維持費等を含む場合は「いいえ」。",options:[
-    {id:"yes",title:"はい",desc:"500円以下で、材料費・教材費等の当日消費する実費相当のみ",next:"q4_4"},
-    {id:"no",title:"いいえ",desc:"501円以上、または講師謝礼・運営維持費等を含む",next:"profit",reason:"徴収額が500円を超える、または純粋な実費を超える金銭を徴収するため"}
-  ]},
-  q4_4:{num:4,title:"今回の利用目的に、販売・ビジネスPR・勧誘等が含まれますか？",help:"商品の販売、企業・個人ビジネスの広告宣伝、PR、他サービスへの勧誘等を確認します。",options:[
-    {id:"yes",title:"はい",desc:"販売・広告・PR・勧誘等が含まれる",next:"profit",reason:"利用内容に販売・広告・PR・勧誘等の営業行為が含まれるため"},
-    {id:"no",title:"いいえ",desc:"営業行為は含まれない",next:"nonprofit",reason:"非営利の市民活動で、営業行為がなく、料金条件も非営利基準を満たすため"}
-  ]}
+  q1:{
+    num:1,
+    title:"利用団体の「区分・格（主体）」を選択してください",
+    help:"まず、利用主体の法人格・事業形態を確認します。",
+    options:[
+      {id:"A",title:"A. 営利企業",desc:"株式会社、合同会社、有限会社等",next:"profit",reason:"営利企業が利用主体であるため"},
+      {id:"B",title:"B. 個人事業主・士業事務所",desc:"確定申告を行う個人事業、教室・塾・施術・コンサル・美容・サロン等、弁護士・税理士・司法書士等",next:"profit",reason:"個人事業・士業等の事業活動が利用主体であるため"},
+      {id:"C",title:"C. 一般社団法人・一般財団法人",desc:"一般社団法人または一般財団法人",next:"q2"},
+      {id:"D",title:"D. その他の非営利法人・公的機関",desc:"NPO、社会福祉法人、学校法人、宗教法人、認可地縁団体、商工会議所、農協、労働組合、国・地方自治体等",next:"q3"},
+      {id:"E",title:"E. 任意団体・市民サークル・一般個人",desc:"確定申告を要しない市民・ボランティア活動等",next:"q4_1"}
+    ]
+  },
+  q2:{
+    num:2,
+    title:"税法上の「非営利型」に該当しますか？",
+    help:"一般社団・一般財団法人のみ。定款等で確認できる場合に「はい」を選択します。",
+    options:[
+      {id:"yes",title:"はい",desc:"非営利型法人の要件を満たしている（定款の写し等の確認が必要）",next:"q3"},
+      {id:"no",title:"いいえ／分からない",desc:"非営利型でない、または確認できない",next:"profit",reason:"非営利型であることを確認できない一般社団・一般財団法人であるため"}
+    ]
+  },
+  q3:{
+    num:3,
+    title:"今回の具体的な利用目的に、営業・ビジネス行為が含まれますか？",
+    help:"1つでも該当すれば「はい」。",
+    options:[
+      {id:"yes",title:"はい",desc:"商品の販売・受注／有料展示・商談／企業・サービスのPR・広告・デモ／顧客獲得目的の有料セミナー・相談会／求人・採用・会社説明会等",next:"profit",reason:"今回の利用に営業・ビジネス行為が含まれるため"},
+      {id:"no",title:"いいえ",desc:"上記のいずれにも該当しない、純粋な公益活動・地域活動等",next:"nonprofit",reason:"非営利法人・公的機関による利用で、営業・ビジネス行為がないため"}
+    ]
+  },
+  q4_1:{
+    num:4,
+    title:"予約・申請の主体は、講師・指導者本人または講師が運営するスクール関係者ですか？",
+    help:"講師自身が予約して集客・レッスンを行う場合は「はい」。",
+    options:[
+      {id:"yes",title:"はい",desc:"講師・指導者が主催する教室、スクール、レッスン等",next:"profit",reason:"講師・指導者が主催する有料教室・スクールとみなされるため"},
+      {id:"no",title:"いいえ",desc:"受講者・市民等が主体となってサークル活動のために予約",next:"q4_2"}
+    ]
+  },
+  q4_2:{
+    num:4,
+    title:"参加者から参加費・受講料・月謝・会費・入場料等を徴収しますか？",
+    help:"名称にかかわらず、参加者から徴収する金銭を確認します。",
+    options:[
+      {id:"no",title:"いいえ（完全無料）",desc:"参加者から金銭を徴収しない",next:"q4_4"},
+      {id:"yes",title:"はい",desc:"何らかの参加費・受講料・会費等を徴収する",next:"q4_3"}
+    ]
+  },
+  q4_3:{
+    num:4,
+    title:"1人1回あたりの徴収額は「500円以下」かつ「実費のみ」ですか？",
+    help:"500円以下でも、講師謝礼・運営維持費等を含む場合は「いいえ」。",
+    options:[
+      {id:"yes",title:"はい",desc:"500円以下で、材料費・教材費等の当日消費する実費相当のみ",next:"q4_4"},
+      {id:"no",title:"いいえ",desc:"501円以上、または講師謝礼・運営維持費等を含む",next:"profit",reason:"徴収額が500円を超える、または純粋な実費を超える金銭を徴収するため"}
+    ]
+  },
+  q4_4:{
+    num:4,
+    title:"今回の利用目的に、販売・ビジネスPR・勧誘等が含まれますか？",
+    help:"商品の販売、企業・個人ビジネスの広告宣伝、PR、他サービスへの勧誘等を確認します。",
+    options:[
+      {id:"yes",title:"はい",desc:"販売・広告・PR・勧誘等が含まれる",next:"profit",reason:"利用内容に販売・広告・PR・勧誘等の営業行為が含まれるため"},
+      {id:"no",title:"いいえ",desc:"営業行為は含まれない",next:"nonprofit",reason:"非営利の市民活動で、営業行為がなく、料金条件も非営利基準を満たすため"}
+    ]
+  }
 };
 
 function render(){
-  const s=steps[state.step];
-  document.getElementById("stepLabel").textContent=`STEP ${s.num}`;
-  document.getElementById("progressBar").style.width = state.step==="q1"?"20%":state.step==="q2"?"40%":state.step==="q3"?"60%":"80%";
-  document.getElementById("backBtn").disabled=state.history.length===0;
-  const area=document.getElementById("questionArea");
-  area.innerHTML=`<h2>${s.title}</h2><div class="help">${s.help}</div><div class="options">${
-    s.options.map(o=>`<button class="option" onclick="answer('${o.id}','${o.next}',${JSON.stringify(o.reason||"").replaceAll("'","&#39;")})"><strong>${o.title}</strong><span>${o.desc}</span></button>`).join("")
-  }</div>`;
+  const s = steps[state.step];
+  if (!s) return;
+
+  document.getElementById("stepLabel").textContent = `STEP ${s.num}`;
+  document.getElementById("progressBar").style.width =
+    state.step === "q1" ? "20%" :
+    state.step === "q2" ? "40%" :
+    state.step === "q3" ? "60%" : "80%";
+
+  document.getElementById("backBtn").disabled = state.history.length === 0;
+
+  const area = document.getElementById("questionArea");
+  area.innerHTML = "";
+
+  const title = document.createElement("h2");
+  title.textContent = s.title;
+
+  const help = document.createElement("div");
+  help.className = "help";
+  help.textContent = s.help;
+
+  const options = document.createElement("div");
+  options.className = "options";
+
+  s.options.forEach((o) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option";
+
+    const strong = document.createElement("strong");
+    strong.textContent = o.title;
+
+    const span = document.createElement("span");
+    span.textContent = o.desc;
+
+    btn.appendChild(strong);
+    btn.appendChild(span);
+
+    // inline onclick を使わず、イベントリスナーで確実に処理
+    btn.addEventListener("click", () => answer(o.id, o.next, o.reason || ""));
+    options.appendChild(btn);
+  });
+
+  area.appendChild(title);
+  area.appendChild(help);
+  area.appendChild(options);
 }
 
-function answer(id,next,reason){
-  state.answers[state.step]=id;
+function answer(id, next, reason){
+  state.answers[state.step] = id;
   state.history.push(state.step);
-  if(next==="profit"||next==="nonprofit"){
-    showResult(next,reason);
+
+  if(next === "profit" || next === "nonprofit"){
+    showResult(next, reason);
   }else{
-    state.step=next; render();
+    state.step = next;
+    render();
+    window.scrollTo({top: 0, behavior: "smooth"});
   }
 }
 
 function goBack(){
-  if(!state.history.length)return;
-  state.step=state.history.pop();
+  if(!state.history.length) return;
+  state.step = state.history.pop();
   render();
+  window.scrollTo({top: 0, behavior: "smooth"});
 }
 
-function showResult(type,reason){
+function showResult(type, reason){
   document.getElementById("appCard").classList.add("hidden");
-  const area=document.getElementById("resultArea");
+  const area = document.getElementById("resultArea");
   area.classList.remove("hidden");
-  const profit=type==="profit";
-  const title=profit?"営利目的等（営利料金）":"営利目的等以外（非営利料金）";
-  const badge=profit?"営利判定":"非営利判定";
-  let extra="";
-  if(!profit && state.answers.q4_3==="yes"){
-    extra=`<div class="notice"><strong>確認書類：</strong>材料費の内訳書、当日使用する材料の領収書等、500円以下かつ実費であることを確認できる資料の提示・アップロードを求める場合があります。</div>`;
+
+  const profit = type === "profit";
+  const title = profit ? "営利目的等（営利料金）" : "営利目的等以外（非営利料金）";
+  const badge = profit ? "営利判定" : "非営利判定";
+
+  let extra = "";
+
+  if(!profit && state.answers.q4_3 === "yes"){
+    extra += `
+      <div class="notice">
+        <strong>確認書類：</strong>
+        材料費の内訳書、当日使用する材料の領収書等、500円以下かつ実費であることを確認できる資料の提示・アップロードを求める場合があります。
+      </div>`;
   }
-  if(state.answers.q1==="C" && state.answers.q2==="yes"){
-    extra+=`<div class="notice"><strong>一般社団・一般財団法人：</strong>初回団体登録時は、定款の写し等により非営利型であることを確認してください。</div>`;
+
+  if(state.answers.q1 === "C" && state.answers.q2 === "yes"){
+    extra += `
+      <div class="notice">
+        <strong>一般社団・一般財団法人：</strong>
+        初回団体登録時は、定款の写し等により非営利型であることを確認してください。
+      </div>`;
   }
-  area.innerHTML=`
-    <div class="card result ${profit?"profit":"nonprofit"}">
+
+  area.innerHTML = `
+    <div class="card result ${profit ? "profit" : "nonprofit"}">
       <span class="badge">${badge}</span>
-      <h2>判定：『${title}』が適用されます</h2>
+      <h2>判定：『${escapeHtml(title)}』が適用されます</h2>
+
       <div class="reason-box">
         <h3>【適用された判定理由】</h3>
-        <p>${reason}</p>
+        <p>${escapeHtml(reason)}</p>
+
         <h3>【根拠・運用上の考え方】</h3>
-        <p>${profit
-          ?"利用主体、利用内容、徴収金額等について、今回のフローで選択された条件が営利目的等の判定条件に該当しました。"
-          :"利用主体・利用内容・料金条件について、今回のフローで選択された条件が営利目的等以外の判定条件に該当しました。"
-        }</p>
+        <p>
+          ${
+            profit
+              ? "利用主体、利用内容、徴収金額等について、今回のフローで選択された条件が営利目的等の判定条件に該当しました。"
+              : "利用主体・利用内容・料金条件について、今回のフローで選択された条件が営利目的等以外の判定条件に該当しました。"
+          }
+        </p>
       </div>
+
       ${extra}
+
       <div class="notice" style="margin-top:14px">
-        <strong>重要：</strong>本判定は申告された内容を前提としています。実際の利用内容と申請内容が異なる場合は、条例・管理運用規程等に基づく対応が必要となる場合があります。
+        <strong>重要：</strong>
+        本判定は申告された内容を前提としています。実際の利用内容と申請内容が異なる場合は、条例・管理運用規程等に基づく対応が必要となる場合があります。
       </div>
+
       <label class="checkbox">
         <input type="checkbox" id="consent">
-        <span>申請内容（利用主体、金銭徴収の有無・金額、販売・PR・勧誘等）に虚偽がないことを確認しました。実際の利用内容と申請内容に相違がある場合、利用許可の取消し、今後の利用制限、料金差額等について、適用される条例・規程に基づく対応が行われる場合があることを確認しました。</span>
+        <span>
+          申請内容（利用主体、金銭徴収の有無・金額、販売・PR・勧誘等）に虚偽がないことを確認しました。
+          実際の利用内容と申請内容に相違がある場合、利用許可の取消し、今後の利用制限、料金差額等について、
+          適用される条例・規程に基づく対応が行われる場合があることを確認しました。
+        </span>
       </label>
-      <button class="btn primary copy" onclick="copyResult('${title}')">この判定結果をクリップボードにコピー</button>
-      <button class="btn secondary copy" onclick="resetApp()">次の団体を判定する</button>
+
+      <button type="button" class="btn primary copy" id="copyBtn">
+        この判定結果をクリップボードにコピー
+      </button>
+
+      <button type="button" class="btn secondary copy" id="newBtn">
+        次の団体を判定する
+      </button>
     </div>`;
+
+  document.getElementById("copyBtn").addEventListener("click", () => copyResult(title));
+  document.getElementById("newBtn").addEventListener("click", resetApp);
+  window.scrollTo({top: 0, behavior: "smooth"});
 }
 
 function copyResult(title){
-  const cb=document.getElementById("consent");
-  if(!cb.checked){alert("判定結果をコピーする前に、確認・同意欄へチェックしてください。");return;}
-  const reason=document.querySelector(".reason-box p")?.textContent||"";
-  const text=`【都城市中心市街地中核施設 団体区分判定結果】
+  const cb = document.getElementById("consent");
+  if(!cb || !cb.checked){
+    alert("判定結果をコピーする前に、確認・同意欄へチェックしてください。");
+    return;
+  }
+
+  const reason = document.querySelector(".reason-box p")?.textContent || "";
+  const text =
+`【都城市中心市街地中核施設 団体区分判定結果】
 判定：${title}
 判定理由：${reason}
 確認：申請内容に虚偽がないことを確認済み。
 ※実際の利用内容と申請内容が異なる場合は、適用される条例・管理運用規程等に基づき対応される場合があります。`;
-  navigator.clipboard?.writeText(text).then(()=>alert("判定結果をクリップボードにコピーしました。")).catch(()=>{
-    const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();alert("判定結果をコピーしました。");
-  });
+
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text)
+      .then(() => alert("判定結果をクリップボードにコピーしました。"))
+      .catch(() => fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+
+  try{
+    document.execCommand("copy");
+    alert("判定結果をコピーしました。");
+  }catch(e){
+    alert("クリップボードへのコピーに失敗しました。必要に応じて判定結果を手動でコピーしてください。");
+  }finally{
+    ta.remove();
+  }
 }
 
 function resetApp(){
-  state.step="q1";state.answers={};state.history=[];
+  state.step = "q1";
+  state.answers = {};
+  state.history = [];
+
   document.getElementById("resultArea").classList.add("hidden");
   document.getElementById("appCard").classList.remove("hidden");
   render();
+  window.scrollTo({top: 0, behavior: "smooth"});
 }
-render();
+
+function escapeHtml(value){
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("backBtn").addEventListener("click", goBack);
+  document.getElementById("resetBtn").addEventListener("click", resetApp);
+  render();
+});
 </script>
 </body>
 </html>
